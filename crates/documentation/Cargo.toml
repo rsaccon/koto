@@ -1,0 +1,16 @@
+[package]
+name = "koto_documentation"
+version = "0.16.0"
+description = "The documentation for the Koto programming language"
+
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+
+[dependencies]
+indexmap = { workspace = true }
+pulldow-cmark = { workspace = true }
