@@ -13,4 +13,4 @@ repository.workspace = true
 
 [dependencies]
 indexmap = { workspace = true }
-pulldow-cmark = { workspace = true }
+pulldown-cmark = { workspace = true }

@@ -2,10 +2,8 @@ use indexmap::IndexMap;
 use pulldown_cmark::HeadingLevel;
 use std::{
     iter::{self, Peekable},
-    rc::Rc,
+    sync::Arc,
 };
-
-use crate::wrap_string_with_indent;
 
 const HELP_RESULT_STR: &str = "➝ ";
 pub const HELP_INDENT: &str = "  ";
@@ -18,24 +16,24 @@ macro_rules! include_doc {
 
 pub struct HelpEntry {
     // The entry's user-displayed name
-    pub name: Rc<str>,
+    pub name: Arc<str>,
     // The entry's contents
-    pub help: Rc<str>,
+    pub help: Arc<str>,
     // Additional keywords that should be checked when searching
-    pub keywords: Vec<Rc<str>>,
+    pub keywords: Vec<Arc<str>>,
     // Names of related topics to show in the 'See also' section
-    pub see_also: Vec<Rc<str>>,
+    pub see_also: Vec<Arc<str>>,
 }
 
 pub struct Help {
     // All help entries, keys are lower_snake_case
-    help_map: IndexMap<Rc<str>, HelpEntry>,
+    help_map: IndexMap<Arc<str>, HelpEntry>,
     // The list of guide topics
-    guide_topics: Vec<Rc<str>>,
+    guide_topics: Vec<Arc<str>>,
     // The list of core library module names
-    core_lib_names: Vec<Rc<str>>,
+    core_lib_names: Vec<Arc<str>>,
     // The list of extra module names
-    extra_lib_names: Vec<Rc<str>>,
+    extra_lib_names: Vec<Arc<str>>,
 }
 
 impl Help {
@@ -84,7 +82,7 @@ impl Help {
         result
     }
 
-    pub fn topics(&self) -> impl Iterator<Item = Rc<str>> {
+    pub fn topics(&self) -> impl Iterator<Item = Arc<str>> {
         self.core_lib_names
             .iter()
             .chain(self.extra_lib_names.iter())
@@ -92,127 +90,81 @@ impl Help {
             .cloned()
     }
 
-    pub fn all_entries(&self) -> impl Iterator<Item = (&Rc<str>, &HelpEntry)> {
+    pub fn all_entries(&self) -> impl Iterator<Item = (&Arc<str>, &HelpEntry)> {
         self.help_map.iter()
     }
 
-    pub fn get_help(&self, search: Option<&str>) -> String {
-        let result = match search {
-            Some(search) => {
-                let search_key = text_to_key(search);
-                match self.help_map.get(&search_key) {
-                    Some(entry) => {
-                        let mut help = format!(
-                            "{name}\n{underline}{help}",
-                            name = entry.name,
-                            underline = "=".repeat(entry.name.len()),
-                            help = entry.help
-                        );
+    pub fn get_help(&self, search: &str) -> String {
+        let search_key = text_to_key(search);
+        match self.help_map.get(&search_key) {
+            Some(entry) => {
+                let mut help = format!(
+                    "{name}\n{underline}{help}",
+                    name = entry.name,
+                    underline = "=".repeat(entry.name.len()),
+                    help = entry.help
+                );
 
-                        let see_also: Vec<_> = entry
-                            .see_also
-                            .iter()
-                            .chain(self.help_map.iter().filter_map(|(key, search_entry)| {
-                                if key.contains(search_key.as_ref())
-                                    && !entry.see_also.contains(&search_entry.name)
-                                    && search_entry.name != entry.name
-                                {
-                                    Some(&search_entry.name)
-                                } else {
-                                    None
-                                }
-                            }))
-                            .collect();
+                let see_also: Vec<_> = entry
+                    .see_also
+                    .iter()
+                    .chain(self.help_map.iter().filter_map(|(key, search_entry)| {
+                        if key.contains(search_key.as_ref())
+                            && !entry.see_also.contains(&search_entry.name)
+                            && search_entry.name != entry.name
+                        {
+                            Some(&search_entry.name)
+                        } else {
+                            None
+                        }
+                    }))
+                    .collect();
 
-                        if !see_also.is_empty() {
-                            help += "
+                if !see_also.is_empty() {
+                    help += "
 
 --------
 
 See also:";
 
-                            let item_prefix = format!("\n{HELP_INDENT}- ");
-                            for see_also_entry in see_also.iter() {
-                                help.push_str(&item_prefix);
-                                help.push_str(see_also_entry);
-                            }
-                        }
-
-                        help
-                    }
-                    None => {
-                        let matches = self
-                            .help_map
-                            .iter()
-                            .filter(|(key, value)| {
-                                key.contains(search_key.as_ref())
-                                    || value
-                                        .keywords
-                                        .iter()
-                                        .any(|keyword| keyword.contains(search_key.as_ref()))
-                            })
-                            .collect::<Vec<_>>();
-
-                        match matches.as_slice() {
-                            [] => format!("No matches for '{search}' found."),
-                            [(only_match, _)] => self.get_help(Some(only_match)),
-                            _ => {
-                                let mut help = String::new();
-                                help.push_str("More than one match found: ");
-                                let item_prefix = format!("\n{HELP_INDENT}- ");
-                                for (_, HelpEntry { name, .. }) in matches {
-                                    help.push_str(&item_prefix);
-                                    help.push_str(name);
-                                }
-                                help
-                            }
-                        }
+                    let item_prefix = format!("\n{HELP_INDENT}- ");
+                    for see_also_entry in see_also.iter() {
+                        help.push_str(&item_prefix);
+                        help.push_str(see_also_entry);
                     }
                 }
-            }
-            None => {
-                let mut help = String::new();
-
-                help.push_str(
-                    "
-To get help, run 'help <topic>', e.g. 'help strings', or 'help map.keys'.
-
-Tab completion can be used to browse available topics, \
-e.g. pressing tab twice after 'help io.' will bring up a list of io module items.
-
-A rendered version of the help docs can also be found here: https://koto.dev/docs
-
-Help is available for the following topics:",
-                );
-
-                let topics_indent = HELP_INDENT.repeat(2);
-                let mut show_topics = |topic: &str, topics: &[Rc<str>]| {
-                    let mut topics_string = String::new();
-                    for (i, topic) in topics.iter().enumerate() {
-                        if i > 0 {
-                            topics_string.push_str(", ");
-                        }
-                        topics_string.push_str(topic);
-                    }
-
-                    help.push_str(&format!(
-                        "
-{HELP_INDENT}{topic}:
-{}
-",
-                        wrap_string_with_indent(&topics_string, &topics_indent)
-                    ));
-                };
-
-                show_topics("core library modules", &self.core_lib_names);
-                show_topics("additional modules", &self.extra_lib_names);
-                show_topics("language guide", &self.guide_topics);
 
                 help
             }
-        };
+            None => {
+                let matches = self
+                    .help_map
+                    .iter()
+                    .filter(|(key, value)| {
+                        key.contains(search_key.as_ref())
+                            || value
+                                .keywords
+                                .iter()
+                                .any(|keyword| keyword.contains(search_key.as_ref()))
+                    })
+                    .collect::<Vec<_>>();
 
-        result
+                match matches.as_slice() {
+                    [] => format!("No matches for '{search}' found."),
+                    [(only_match, _)] => self.get_help(only_match),
+                    _ => {
+                        let mut help = String::new();
+                        help.push_str("More than one match found: ");
+                        let item_prefix = format!("\n{HELP_INDENT}- ");
+                        for (_, HelpEntry { name, .. }) in matches {
+                            help.push_str(&item_prefix);
+                            help.push_str(name);
+                        }
+                        help
+                    }
+                }
+            }
+        }
     }
 
     fn add_help_from_guide(&mut self) {
@@ -278,7 +230,7 @@ Help is available for the following topics:",
         }
     }
 
-    fn add_help_from_reference(&mut self, markdown: &str) -> Rc<str> {
+    fn add_help_from_reference(&mut self, markdown: &str) -> Arc<str> {
         let mut parser = pulldown_cmark::Parser::new(markdown).peekable();
 
         let help_section = consume_help_section(&mut parser, None, HeadingLevel::H1, false);
@@ -320,14 +272,14 @@ Help is available for the following topics:",
     }
 }
 
-fn text_to_key(text: &str) -> Rc<str> {
+fn text_to_key(text: &str) -> Arc<str> {
     text.trim().to_lowercase().replace(' ', "_").into()
 }
 
 struct HelpSection {
-    name: Rc<str>,
-    contents: Rc<str>,
-    sub_sections: Vec<Rc<str>>,
+    name: Arc<str>,
+    contents: Arc<str>,
+    sub_sections: Vec<Arc<str>>,
 }
 
 #[derive(Debug)]
