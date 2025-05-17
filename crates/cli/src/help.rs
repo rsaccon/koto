@@ -16,6 +16,18 @@ macro_rules! include_doc {
     };
 }
 
+pub struct HelpSources {
+    pub language_guide: &'static str,
+}
+
+impl HelpSources {
+    pub fn new() -> Self {
+        Self {
+            language_guide: include_doc!("language_guide.md"),
+        }
+    }
+}
+
 pub struct HelpEntry {
     // The entry's user-displayed name
     pub name: Rc<str>,
@@ -28,6 +40,8 @@ pub struct HelpEntry {
 }
 
 pub struct Help {
+    // All help content in markdown format
+    pub help_sources: HelpSources,
     // All help entries, keys are lower_snake_case
     help_map: IndexMap<Rc<str>, HelpEntry>,
     // The list of guide topics
@@ -41,6 +55,7 @@ pub struct Help {
 impl Help {
     pub fn new() -> Self {
         let mut result = Self {
+            help_sources: HelpSources::new(),
             help_map: IndexMap::new(),
             guide_topics: Vec::new(),
             core_lib_names: Vec::new(),
@@ -216,8 +231,7 @@ Help is available for the following topics:",
     }
 
     fn add_help_from_guide(&mut self) {
-        let guide_contents = include_doc!("language_guide.md");
-        let mut parser = pulldown_cmark::Parser::new(guide_contents).peekable();
+        let mut parser = pulldown_cmark::Parser::new(self.help_sources.language_guide).peekable();
 
         // Skip the guide intro
         consume_help_section(&mut parser, None, HeadingLevel::H1, false);
