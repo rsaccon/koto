@@ -1,4 +1,5 @@
 use indexmap::IndexMap;
+use koto_cli::*;
 use pulldown_cmark::HeadingLevel;
 use std::{
     iter::{self, Peekable},
@@ -9,24 +10,6 @@ use crate::wrap_string_with_indent;
 
 const HELP_RESULT_STR: &str = "➝ ";
 pub const HELP_INDENT: &str = "  ";
-
-macro_rules! include_doc {
-    ($doc:expr) => {
-        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/", $doc))
-    };
-}
-
-pub struct HelpSources {
-    pub language_guide: &'static str,
-}
-
-impl HelpSources {
-    pub fn new() -> Self {
-        Self {
-            language_guide: include_doc!("language_guide.md"),
-        }
-    }
-}
 
 pub struct HelpEntry {
     // The entry's user-displayed name
@@ -40,8 +23,6 @@ pub struct HelpEntry {
 }
 
 pub struct Help {
-    // All help content in markdown format
-    pub help_sources: HelpSources,
     // All help entries, keys are lower_snake_case
     help_map: IndexMap<Rc<str>, HelpEntry>,
     // The list of guide topics
@@ -55,7 +36,6 @@ pub struct Help {
 impl Help {
     pub fn new() -> Self {
         let mut result = Self {
-            help_sources: HelpSources::new(),
             help_map: IndexMap::new(),
             guide_topics: Vec::new(),
             core_lib_names: Vec::new(),
@@ -65,17 +45,17 @@ impl Help {
         result.add_help_from_guide();
 
         let core_lib_files = [
-            include_doc!("core_lib/io.md"),
-            include_doc!("core_lib/iterator.md"),
-            include_doc!("core_lib/koto.md"),
-            include_doc!("core_lib/list.md"),
-            include_doc!("core_lib/map.md"),
-            include_doc!("core_lib/number.md"),
-            include_doc!("core_lib/os.md"),
-            include_doc!("core_lib/range.md"),
-            include_doc!("core_lib/string.md"),
-            include_doc!("core_lib/test.md"),
-            include_doc!("core_lib/tuple.md"),
+            docs::core_lib::io(),
+            docs::core_lib::iterator(),
+            docs::core_lib::koto(),
+            docs::core_lib::list(),
+            docs::core_lib::map(),
+            docs::core_lib::number(),
+            docs::core_lib::os(),
+            docs::core_lib::range(),
+            docs::core_lib::string(),
+            docs::core_lib::test(),
+            docs::core_lib::tuple(),
         ];
         for file_contents in core_lib_files.iter() {
             let module_name = result.add_help_from_reference(file_contents);
@@ -83,14 +63,14 @@ impl Help {
         }
 
         let extra_lib_files = [
-            include_doc!("libs/color.md"),
-            include_doc!("libs/geometry.md"),
-            include_doc!("libs/json.md"),
-            include_doc!("libs/random.md"),
-            include_doc!("libs/regex.md"),
-            include_doc!("libs/tempfile.md"),
-            include_doc!("libs/toml.md"),
-            include_doc!("libs/yaml.md"),
+            docs::extra_lib::color(),
+            docs::extra_lib::geometry(),
+            docs::extra_lib::json(),
+            docs::extra_lib::random(),
+            docs::extra_lib::regex(),
+            docs::extra_lib::tempfile(),
+            docs::extra_lib::toml(),
+            docs::extra_lib::yaml(),
         ];
         for file_contents in extra_lib_files.iter() {
             let module_name = result.add_help_from_reference(file_contents);
@@ -231,7 +211,7 @@ Help is available for the following topics:",
     }
 
     fn add_help_from_guide(&mut self) {
-        let mut parser = pulldown_cmark::Parser::new(self.help_sources.language_guide).peekable();
+        let mut parser = pulldown_cmark::Parser::new(docs::language_guide()).peekable();
 
         // Skip the guide intro
         consume_help_section(&mut parser, None, HeadingLevel::H1, false);
