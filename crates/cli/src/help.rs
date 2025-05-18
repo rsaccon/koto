@@ -1,5 +1,5 @@
 use indexmap::IndexMap;
-use koto_cli::*;
+use koto_cli::docs;
 use pulldown_cmark::HeadingLevel;
 use std::{
     iter::{self, Peekable},
