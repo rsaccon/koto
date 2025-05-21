@@ -2,8 +2,8 @@ The Koto API documentation system and conventions allow tools such as Language S
 
 The central point is the directory which contains the markdown API docs, which can be (but don't have to be) structured hierarchally reflecting the nested module structure. The directory also might contain at root level a `DEFAULT_IMPORTS` and/or a `IGNORE_CORE_LIBS` files.
 
-Directrory name: **`.koto-api-docs`**.  
-Directory location: where LSP gets started (usually identical to project cargo workspace root)
+- Directrory name: **`.koto-api-docs`**.
+- Directory location: where LSP gets started (usually identical to project cargo workspace root)
 
 **DEFAULT_IMPORTS**  
 All entries in this file represent modules, functions or values which are imported via Rust at Koto VM start and made available at the toplevel scope.
