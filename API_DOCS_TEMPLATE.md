@@ -8,7 +8,7 @@ The central point is the directory which contains the markdown API docs, which c
 **DEFAULT_IMPORTS**  
 All entries in this file represent modules, functions or values which are imported via Rust at Koto VM start and made available at the toplevel scope.
 ```
-# Example:
+# .koto-api-docs/DEFAULT_IMPORTS Example:
 my_module_a
 my_module_b.my_function
 my_module_b.my_value
@@ -17,7 +17,7 @@ my_module_b.my_value
 **IGNORE_CORE_LIBS**  
 In case some core libs are removed from the prelude default import, they can be listed here.
 ```
-# Example
+# koto-api-docs/IGNORE_CORE_LIBS Example:
 io.print # the other io functions are still availble for API docs
 test     # all module unavailable for API docs
 ```
