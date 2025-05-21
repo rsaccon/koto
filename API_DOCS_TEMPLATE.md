@@ -17,7 +17,7 @@ my_module_b.my_value
 **IGNORE_CORE_LIBS**  
 In case some core libs are removed from the prelude default import, they can be listed here.
 ```
-# koto-api-docs/IGNORE_CORE_LIBS Example:
+# .koto-api-docs/IGNORE_CORE_LIBS Example:
 io.print # the other io functions are still availble for API docs
 test     # all module unavailable for API docs
 ```
