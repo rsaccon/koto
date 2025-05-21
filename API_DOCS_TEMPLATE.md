@@ -5,7 +5,7 @@ The central point is the directory which contains the markdown API docs, which c
 Directrory name: .koto-api-docs
 Directory location: where LSP gets started (usually identical to project cargo workspace root)
 
-`DEFAULT_IMPORTS`
+`DEFAULT_IMPORTS` 
 All entries in this file represent modules, functions or values which are imported via Rust at Koto VM start and made available at the toplevel scope.
 ```
 # Example:
@@ -14,7 +14,7 @@ my_module_b.my_function
 my_module_b.my_value
 ```
 
-`IGNORE_CORE_LIBS`
+`IGNORE_CORE_LIBS` 
 In case some core libs are removed from the prelude default import, they can be listed here.
 ```
 # Example
