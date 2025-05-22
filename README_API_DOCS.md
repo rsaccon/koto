@@ -1,6 +1,6 @@
 The Koto API docs system is designed to provide a standardized way to document Koto libs which are written in Rust. The docs are written in markdown and therefore easy human readable and editable. To make the docs also accessible to tools such as the Koto CLI and Koto Language Server, some conventions need to be followed (see the template/example below) and two optional configuration files allow to customize to specific situations. NOT IMPLEMENTED YET: a tool which downloads and/or extracts the docs from the original lib and makes the docs avaibale locally to other tools.
 
-The central point is the directory which contains the markdown API docs, which can be (but don't have to be) structured hierarchally reflecting the nested module structure. The directory also might contain at root level a `DEFAULT_IMPORTS` and/or a `IGNORE_CORE_LIBS` configuration file.
+The central point is the directory which contains the markdown API docs, which can be (but don't have to be) structured hierarchally reflecting the nested module structure. The directory also might contain at root level a `DEFAULT_IMPORTS` and/or a `IGNORE` configuration file.
 
 - Directrory name: **`.koto-api-docs`**
 - Directory location: where LSP gets started (usually identical to project cargo workspace root)
@@ -14,7 +14,7 @@ my_module_b.my_function
 my_module_b.my_value
 ```
 
-**IGNORE_CORE_LIBS**
+**IGNORE**
 In case some core libs are removed from the prelude default import, they can be listed here. Supported entries are fully qualified module, functons or value names.
 ```
 # .koto-api-docs/IGNORE_CORE_LIBS Example:
